@@ -3,15 +3,15 @@ package github
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/google/go-github/v66/github"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type flatFunc func(d *schema.ResourceData, enterprise *string, auditStream *github.AuditStream)
-type expandFunc func(d *schema.ResourceData, m interface{}) (*github.AuditStream, string)
+type expandFunc func(d *schema.ResourceData) (*github.AuditStream, string)
 
 func genBaseGitHubAuditStreamResource(f flatFunc, e expandFunc) *schema.Resource {
 	return &schema.Resource{
@@ -68,18 +68,15 @@ func resourceGitHubEnterpriseAuditStreamCreate(flat flatFunc, expand expandFunc)
 		ctx := context.Background()
 		client := m.(*Owner).v3client
 
-		auditStream, enterprise := expand(d, m)
+		auditStream, enterprise := expand(d)
 
-		log.Printf("[DEBUG] Create audit stream: enterprise=%s type=%s", enterprise, auditStream.StreamType)
 		out, _, err := client.Enterprise.CreateAuditStream(ctx, enterprise, auditStream)
 		if err != nil {
 			return fmt.Errorf("create audit log stream: %w", err)
 		}
 
-		log.Printf("[DEBUG] Created audit stream id=%d", out.ID)
-
 		d.SetId(fmt.Sprintf("%s/%d", enterprise, out.ID))
-		return nil //resourceGitHubEnterpriseAuditStreamRead(flat, expand)(d, m)
+		return resourceGitHubEnterpriseAuditStreamRead(flat, expand)(d, m)
 	}
 }
 
