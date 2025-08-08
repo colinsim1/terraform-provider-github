@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/google/go-github/v66/github"
@@ -10,7 +11,7 @@ import (
 )
 
 type flatFunc func(d *schema.ResourceData, enterprise *string, auditStream *github.AuditStream)
-type expandFunc func(d *schema.ResourceData) (*github.AuditStream, string)
+type expandFunc func(d *schema.ResourceData, m interface{}) (*github.AuditStream, string)
 
 func genBaseGitHubAuditStreamResource(f flatFunc, e expandFunc) *schema.Resource {
 	return &schema.Resource{
@@ -40,7 +41,7 @@ func genBaseGitHubAuditStreamResource(f flatFunc, e expandFunc) *schema.Resource
 }
 
 // doBaseExpansion performs the expansion for the 'base' attributes that are defined in the schema, above
-func doBaseExpansion(d *schema.ResourceData) (*github.AuditStream, string, bool) {
+func doBaseExpansion(d *schema.ResourceData) (*github.AuditStream, string) {
 	var auditStreamId *int
 	parsedId, err := strconv.Atoi(d.Id())
 	if err == nil {
@@ -48,13 +49,12 @@ func doBaseExpansion(d *schema.ResourceData) (*github.AuditStream, string, bool)
 	}
 
 	enterprise := d.Get("enterprise_slug").(string)
-	enabled := d.Get("enabled").(bool)
 
 	auditStream := &github.AuditStream{
 		ID: auditStreamId,
 	}
 
-	return auditStream, enterprise, enabled
+	return auditStream, enterprise
 }
 
 // doBaseFlattening performs the flattening for the 'base' attributes that are defined in the schema, above
@@ -68,15 +68,18 @@ func resourceGitHubEnterpriseAuditStreamCreate(flat flatFunc, expand expandFunc)
 		ctx := context.Background()
 		client := m.(*Owner).v3client
 
-		auditStream, enterprise := expand(d)
+		auditStream, enterprise := expand(d, m)
 
+		log.Printf("[DEBUG] Create audit stream: enterprise=%s type=%s", enterprise, auditStream.StreamType)
 		out, _, err := client.Enterprise.CreateAuditStream(ctx, enterprise, auditStream)
 		if err != nil {
 			return fmt.Errorf("create audit log stream: %w", err)
 		}
 
+		log.Printf("[DEBUG] Created audit stream id=%d", out.ID)
+
 		d.SetId(fmt.Sprintf("%s/%d", enterprise, out.ID))
-		return resourceGitHubEnterpriseAuditStreamRead(flat, expand)(d, m)
+		return nil //resourceGitHubEnterpriseAuditStreamRead(flat, expand)(d, m)
 	}
 }
 

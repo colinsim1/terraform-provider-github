@@ -11,11 +11,6 @@ import (
 	"time"
 )
 
-// AuditStream is the request payload.
-//
-// VendorSpecific is intentionally interface{} to stay idiomatic with go-github’s
-// lightweight API surface. You can pass one of the concrete vendor structs below,
-// or your own map[string]any with the expected JSON fields for the chosen stream type.
 type AuditStream struct {
 	ID             *int               `json:"id,omitempty"`
 	Enabled        bool               `json:"enabled,omitempty"`
@@ -25,6 +20,11 @@ type AuditStream struct {
 	UpdatedAt      time.Time          `json:"updated_at,omitempty"`
 	PausedAt       *time.Time         `json:"paused_at,omitempty"`
 	VendorSpecific *map[string]string `json:"vendor_specific,omitempty"`
+}
+
+type AuditLogStreamKey struct {
+	KeyID     string `json:"key_id"`
+	PublicKey string `json:"public_key"`
 }
 
 // CreateAuditStream creates an audit log stream
@@ -104,4 +104,25 @@ func (s *EnterpriseService) DeleteAuditStream(ctx context.Context, enterprise st
 	}
 
 	return s.client.Do(ctx, req, nil)
+}
+
+// GetAuditStreamKey retrieves the audit log key for encrypting secrets
+//
+// GitHub API docs: https://docs.github.com/enterprise-cloud@latest/rest/enterprise-admin/audit-log#get-the-audit-log-stream-key-for-encrypting-secrets
+//
+//meta:operation GET /enterprises/{enterprise}/audit-log/stream-key
+func (s *EnterpriseService) GetAuditStreamKey(ctx context.Context, enterprise string) (*AuditLogStreamKey, *Response, error) {
+	u := fmt.Sprintf("enterprises/%v/audit-log/stream-key", enterprise)
+
+	req, err := s.client.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var key AuditLogStreamKey
+	resp, err := s.client.Do(ctx, req, &key)
+	if err != nil {
+		return nil, resp, err
+	}
+	return &key, resp, nil
 }
