@@ -195,6 +195,7 @@ func Provider() *schema.Provider {
 			"github_user_ssh_key":                                                   resourceGithubUserSshKey(),
 			"github_enterprise_organization":                                        resourceGithubEnterpriseOrganization(),
 			"github_enterprise_actions_runner_group":                                resourceGithubActionsEnterpriseRunnerGroup(),
+			"github_enterprise_audit_stream_azure_blob":                             resourceGitHubEnterpriseAuditStreamAzureBlobStorage(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
