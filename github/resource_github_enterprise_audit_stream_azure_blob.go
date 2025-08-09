@@ -10,10 +10,11 @@ func resourceGitHubEnterpriseAuditStreamAzureBlobStorage() *schema.Resource {
 	r := genBaseGitHubAuditStreamResource(flattenAuditStreamAzureBlobStorage, expandAuditStreamAzureBlobStorage)
 
 	r.Schema["key_id"] = &schema.Schema{
-		Type:        schema.TypeString,
-		ForceNew:    true,
-		Required:    true,
-		Description: "Key ID obtained from the audit log stream key endpoint used to encrypt secrets.",
+		Type:         schema.TypeString,
+		ForceNew:     true,
+		Required:     true,
+		ValidateFunc: validation.StringIsNotEmpty,
+		Description:  "Key ID obtained from the audit log stream key endpoint used to encrypt secrets.",
 	}
 
 	r.Schema["encrypted_sas_url"] = &schema.Schema{
@@ -28,8 +29,10 @@ func resourceGitHubEnterpriseAuditStreamAzureBlobStorage() *schema.Resource {
 
 func expandAuditStreamAzureBlobStorage(d *schema.ResourceData) (*github.AuditStream, string) {
 	auditStream, enterprise := doBaseExpansion(d)
+
 	auditStream.Enabled = d.Get("enabled").(bool)
 	auditStream.StreamType = "Azure Blob Storage"
+
 	auditStream.VendorSpecific = &map[string]string{
 		"key_id":            d.Get("key_id").(string),
 		"encrypted_sas_url": d.Get("encrypted_sas_url").(string),

@@ -3,10 +3,10 @@ package github
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/google/go-github/v66/github"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -49,7 +49,6 @@ func doBaseExpansion(d *schema.ResourceData) (*github.AuditStream, string) {
 	}
 
 	enterprise := d.Get("enterprise_slug").(string)
-
 	auditStream := &github.AuditStream{
 		ID: auditStreamId,
 	}
@@ -60,7 +59,7 @@ func doBaseExpansion(d *schema.ResourceData) (*github.AuditStream, string) {
 // doBaseFlattening performs the flattening for the 'base' attributes that are defined in the schema, above
 func doBaseFlattening(d *schema.ResourceData, auditStream *github.AuditStream, enterprise *string) {
 	d.SetId(strconv.Itoa(*auditStream.ID))
-	d.Set("enterprise", enterprise)
+	d.Set("enterprise_slug", enterprise)
 }
 
 func resourceGitHubEnterpriseAuditStreamCreate(flat flatFunc, expand expandFunc) func(d *schema.ResourceData, m interface{}) error {
@@ -69,6 +68,7 @@ func resourceGitHubEnterpriseAuditStreamCreate(flat flatFunc, expand expandFunc)
 		client := m.(*Owner).v3client
 
 		auditStream, enterprise := expand(d)
+		log.Printf("[DEBUG]: resourceGitHubEnterpriseAuditStreamCreate the value of enterprise is: %s", enterprise)
 
 		out, _, err := client.Enterprise.CreateAuditStream(ctx, enterprise, auditStream)
 		if err != nil {
