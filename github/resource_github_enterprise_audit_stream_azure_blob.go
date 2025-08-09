@@ -21,7 +21,7 @@ func resourceGitHubEnterpriseAuditStreamAzureBlobStorage() *schema.Resource {
 		Type:         schema.TypeString,
 		ForceNew:     true,
 		Required:     true,
-		ValidateFunc: validation.IsURLWithHTTPS,
+		ValidateFunc: validation.StringIsNotEmpty,
 		Description:  "The URL of the Azure Storage Blob Container",
 	}
 	return r
